@@ -2,7 +2,7 @@
 
 AstrBot 插件：对接本地 ComfyUI-APP-MCP，提供 **LLM 异步画图任务、R2 图床上传、生成档案面板、本地模型管理与 CivitAI 下载** 一站式工作台。
 
-> 版本 v0.2.0 · 适配 AstrBot >= v4.25.3 · ComfyUI 需安装 [ComfyUI-APP-MCP](https://github.com/)（`http://127.0.0.1:8188/app-mcp`）
+> 版本 v0.2.0 · 适配 AstrBot >= v4.25.3 · ComfyUI 需安装 [ComfyUI-APP-MCP](https://github.com/Lotus0614/ComfyUI-APP-MCP)（`http://127.0.0.1:8188/app-mcp`）
 
 ## 功能总览
 
