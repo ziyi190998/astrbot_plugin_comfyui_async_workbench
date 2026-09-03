@@ -1,0 +1,1639 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ComfyUI MCP工作台</title>
+<style>
+:root{color-scheme:dark;--black:#0b0b0d;--panel:#151517;--bone:#e8e0d2;--muted:#94907f;
+--blood:#8e2232;--gold:#a68b55;--line:#3a353b;
+--bg-deep:#0d0d0f;--bg-input:#101012;--bg-rowline:var(--bg-rowline);--bg-hover:#141317;
+--bg-active:#17161a;--bg-sel:#1a1712;--bg-preview:#0e0e10;--bg-simg:#0c0c0e;
+--bg-veil:#050506f2;--bg-icon:#111}
+html[data-theme="light"]{color-scheme:light;
+--black:#efece6;--panel:#f8f5ef;--bone:#2b2620;--muted:#83796a;
+--blood:#922738;--gold:#8a6d33;--line:#d8d0c0;
+--bg-deep:#e7e2d8;--bg-input:#fdfcf8;--bg-rowline:#e6dfd2;--bg-hover:#ece7dd;
+--bg-active:#eee9df;--bg-sel:#f0e9d8;--bg-preview:#f4f1ea;--bg-simg:#f2efe8;
+--bg-veil:#f3efe7f2;--bg-icon:#ffffff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:var(--bone);
+font-family:Georgia,"Times New Roman","Microsoft YaHei",serif;min-height:100vh}
+svg{stroke-linecap:round;stroke-linejoin:round}
+/* ── 顶部一级菜单 ── */
+header.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:26px;
+padding:0 22px;height:54px;background:var(--bg-deep);border-bottom:1px solid var(--line)}
+.topbar .brand{display:flex;align-items:center;gap:10px}
+.topbar .ornament{color:var(--gold);font-size:19px}
+.topbar h1{font-size:16px;font-weight:500;margin:0}
+.topbar h1 small{display:block;color:var(--muted);font-size:9.5px;letter-spacing:1px;margin-top:1px}
+nav.primary{display:flex;gap:4px;height:100%}
+nav.primary button{display:flex;align-items:center;gap:8px;background:transparent;border:none;
+border-bottom:2px solid transparent;color:var(--muted);padding:0 16px;font-family:inherit;
+font-size:13.5px;cursor:pointer}
+nav.primary button:hover{color:var(--bone)}
+nav.primary button.active{color:var(--bone);border-bottom-color:var(--gold)}
+nav.primary svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7}
+nav.primary .dev{font-size:10px;color:#615c56;border:1px solid var(--line);
+padding:1px 6px;border-radius:2px;margin-left:2px}
+/* ── 布局 ── */
+.layout{display:flex;min-height:calc(100vh - 54px)}
+aside{width:168px;flex-shrink:0;border-right:1px solid var(--line);background:var(--bg-deep);
+padding:18px 0;display:flex;flex-direction:column}
+aside .sec-title{color:#615c56;font-size:10px;padding:0 20px 10px;letter-spacing:2px}
+aside nav{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+aside nav button{display:flex;align-items:center;gap:9px;text-align:left;background:transparent;
+border:1px solid transparent;color:var(--muted);padding:9px 11px;font-family:inherit;
+font-size:13px;cursor:pointer;border-radius:2px}
+aside nav button:hover{color:var(--bone);border-color:var(--line)}
+aside nav button.active{color:var(--bone);border-color:var(--gold);background:var(--bg-active)}
+aside nav svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.7}
+aside .count{margin-left:auto;font-size:11px;color:#615c56}
+main{flex:1;min-width:0;padding:22px 26px 60px}
+.view{display:none}
+.view.active{display:block}
+/* ── 生成档案 ── */
+.meta{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px;
+border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+.meta h2{font-size:15px;font-weight:500;margin:0}
+#stat{color:var(--muted);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+thead th{text-align:left;color:var(--muted);font-weight:400;font-size:11.5px;
+padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.c-id{width:86px}th.c-tpl{width:146px}th.c-time{width:112px}
+th.c-thumb{width:62px}th.c-del{width:42px}th.c-prompt{width:auto}
+tbody td{padding:4px 8px;border-bottom:1px solid var(--bg-rowline);vertical-align:middle}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--bg-hover)}
+td.id{color:var(--gold);white-space:nowrap;font-size:12.5px}
+td.tpl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}
+td.prompt{overflow:hidden}
+td.prompt .p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help}
+td.prompt .e{color:#d98691;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td.time{white-space:nowrap;color:#615c56;font-size:11px}
+td.thumb{text-align:center}
+td.thumb .box{width:46px;height:46px;border:1px solid var(--line);border-radius:2px;
+background:var(--bg-input);display:inline-block;overflow:hidden;position:relative;cursor:pointer;vertical-align:middle}
+td.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+td.thumb .box:hover{border-color:var(--gold)}
+td.thumb .ph{width:100%;height:100%;display:grid;place-items:center;color:var(--muted);
+font-size:9px;text-align:center;padding:2px;line-height:1.35}
+.badge{display:inline-block;padding:0 6px;font-size:10.5px;border-radius:2px;
+border:1px solid var(--line);color:var(--muted);vertical-align:1px}
+.badge.completed{color:var(--gold);border-color:#5c4a2c}
+.badge.failed{color:#d98691;border-color:var(--blood)}
+.badge.running{color:var(--bone);border-color:var(--gold)}
+.badge.pending{color:var(--muted)}
+td.del{text-align:center}
+.delbtn{width:26px;height:26px;border:1px solid transparent;background:transparent;
+color:#5c5650;cursor:pointer;border-radius:2px;display:inline-grid;place-items:center;vertical-align:middle}
+.delbtn:hover{color:#d98691;border-color:var(--blood)}
+.delbtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7}
+.empty{text-align:center;color:var(--muted);padding:70px 20px}
+.loading{text-align:center;color:var(--muted);padding:40px}
+footer{display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap}
+.sizebox{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+select.pagesize{background:var(--bg-input);color:var(--bone);border:1px solid var(--line);
+padding:5px 8px;border-radius:2px;font-family:inherit;font-size:12px;cursor:pointer}
+.pager{margin-left:auto;display:flex;align-items:center;gap:5px}
+.pgbtn{min-width:30px;height:30px;padding:0 6px;border:1px solid var(--line);background:transparent;
+color:var(--bone);cursor:pointer;border-radius:2px;display:inline-grid;place-items:center;
+font-family:inherit;font-size:12.5px}
+.pgbtn:hover:not(:disabled){border-color:var(--gold)}
+.pgbtn:disabled{opacity:.28;cursor:default}
+.pgbtn.cur{border-color:var(--gold);color:var(--gold)}
+.pgbtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+.pageinfo{color:var(--muted);font-size:11.5px;margin-left:6px}
+/* ── 模型管理占位 ── */
+.placeholder-panel{border:1px dashed var(--line);background:var(--panel);padding:70px 30px;
+text-align:center;color:var(--muted)}
+.placeholder-panel .ornament{color:var(--gold);font-size:30px}
+.placeholder-panel h3{color:var(--bone);font-size:16px;font-weight:500;margin:14px 0 8px}
+.placeholder-panel p{font-size:12.5px;line-height:1.8;margin:0}
+/* ── 模型管理 ── */
+.toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:13px}
+.mcard{border:1px solid var(--line);background:var(--panel);border-radius:2px;overflow:hidden;
+transition:transform .15s,border-color .15s;position:relative}
+.mcard:hover{transform:translateY(-2px);border-color:var(--gold)}
+.mthumb{aspect-ratio:1/1;background:var(--bg-input);display:grid;place-items:center;cursor:pointer;
+position:relative;overflow:hidden}
+.mthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mthumb .noimg{color:var(--muted);font-size:30px}
+.mthumb .vid{position:absolute;right:6px;bottom:6px;font-size:10px;color:var(--muted);
+background:#000c;border:1px solid var(--line);padding:1px 6px;border-radius:2px}
+.mdel{position:absolute;top:6px;right:6px;width:26px;height:26px;border:1px solid #0000;
+background:#000b;color:#8d877d;cursor:pointer;border-radius:2px;display:grid;place-items:center;opacity:0;transition:.12s}
+.mcard:hover .mdel{opacity:1}
+.mdel:hover{color:#d98691;border-color:var(--blood)}
+.mdel svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7}
+.minfo{padding:8px 10px;border-top:1px solid var(--line)}
+.mname{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msub{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:10.5px;margin-top:4px;
+white-space:nowrap;overflow:hidden}
+.mtag{display:inline-block;font-size:9.5px;border:1px solid var(--line);border-radius:2px;
+padding:0 5px;color:var(--muted);flex-shrink:0}
+.mtag.on{color:var(--gold);border-color:#5c4a2c}
+/* 目录树 */
+.tree{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+.tree .folder-wrap{display:flex;flex-direction:column}
+.tree button{display:flex;align-items:center;gap:8px;text-align:left;background:transparent;
+border:1px solid transparent;color:var(--muted);padding:8px 10px;font-family:inherit;
+font-size:13px;cursor:pointer;border-radius:2px;width:100%}
+.tree button:hover{color:var(--bone);border-color:var(--line)}
+.tree button.active{color:var(--bone);border-color:var(--gold);background:var(--bg-active)}
+.tree svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.7}
+.tree .arrow{font-size:9px;width:10px;flex-shrink:0;transition:transform .15s;color:#615c56}
+.tree .collapsed > .arrow{transform:rotate(-90deg)}
+.tree .children{display:flex;flex-direction:column;gap:1px;padding:1px 0 4px 14px}
+.tree .collapsed + .children{display:none}
+.tree .sub-btn{font-size:12px;padding:5px 10px;gap:7px}
+.tree .count{margin-left:auto;font-size:11px;color:#615c56}
+/* 下载面板 */
+.dl-panel{border:1px solid var(--line);background:var(--panel);padding:14px 16px;margin-bottom:14px}
+.dl-search{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.dl-search input{flex:1;min-width:220px;height:34px;border:1px solid var(--line);border-radius:2px;
+background:var(--bg-input);color:var(--bone);padding:0 12px;font-family:inherit;font-size:13px;outline:none}
+.dl-search input:focus{border-color:var(--gold)}
+.dl-search select{height:34px;border:1px solid var(--line);border-radius:2px;background:var(--bg-input);
+color:var(--bone);padding:0 8px;font-family:inherit;font-size:12.5px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.scard{border:1px solid var(--line);background:var(--bg-input);display:flex;gap:10px;padding:8px}
+.scard .simg{width:58px;height:58px;flex-shrink:0;border:1px solid var(--line);background:var(--bg-simg);
+display:grid;place-items:center;color:var(--muted);overflow:hidden}
+.scard .simg img{width:100%;height:100%;object-fit:cover}
+.sinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.sname{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--bone)}
+.smeta{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow2{display:flex;align-items:center;gap:8px;margin-top:auto}
+.sdl{border:1px solid var(--gold);color:var(--gold);background:transparent;padding:3px 12px;
+font-family:inherit;font-size:11.5px;cursor:pointer;border-radius:2px}
+.sdl:hover{background:#2a2214}
+.dl-tasks-head{font-size:12px;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:6px;margin:4px 0 2px}
+.trow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bg-rowline);font-size:12px}
+.trow .tname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .tname small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.pbar{width:180px;height:8px;background:var(--bg-rowline);border:1px solid var(--line);flex-shrink:0}
+.pbar span{display:block;height:100%;background:var(--gold);transition:width .3s}
+.tspeed{width:110px;color:var(--muted);font-size:10.5px;text-align:right;flex-shrink:0}
+.tcancel{border:1px solid var(--line);background:transparent;color:#8d877d;padding:3px 10px;
+font-family:inherit;font-size:11px;cursor:pointer;border-radius:2px}
+.tcancel:hover{color:#d98691;border-color:var(--blood)}
+/* 下载向导 / 队列 */
+.wizard{border:1px solid var(--line);background:var(--panel);padding:16px 18px;max-width:760px}
+.wizard .step{padding:10px 0 16px;border-bottom:1px dashed #2a262c}
+.wizard .step:last-child{border-bottom:none}
+.wizard label{display:block;color:var(--muted);font-size:12.5px;margin-bottom:10px}
+.wiz-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.wiz-row input[type=text]{flex:1;min-width:240px;height:34px;border:1px solid var(--line);border-radius:2px;
+background:var(--bg-input);color:var(--bone);padding:0 12px;font-family:inherit;font-size:13px;outline:none}
+.wiz-row input:focus{border-color:var(--gold)}
+.wiz-row select{height:34px;border:1px solid var(--line);border-radius:2px;background:var(--bg-input);
+color:var(--bone);padding:0 8px;font-family:inherit;font-size:12.5px}
+.vlist{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;max-height:260px;overflow:auto}
+.vrow{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:var(--bg-input);
+padding:8px 12px;cursor:pointer;font-size:12.5px;border-radius:2px}
+.vrow:hover{border-color:var(--gold)}
+.vrow.sel{border-color:var(--gold);background:var(--bg-sel)}
+.vrow.inlib{color:#615c56;cursor:default}
+.vrow .vname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vrow .vmeta{color:var(--muted);font-size:11px;flex-shrink:0}
+.vrow .vlib{color:#d98691;font-size:10.5px;border:1px solid var(--blood);padding:0 6px;border-radius:2px;flex-shrink:0}
+.wiz-opt{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.wiz-switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--bone);cursor:pointer}
+.wiz-switch input{width:16px;height:16px;accent-color:var(--gold)}
+.wiz-hint{color:#615c56;font-size:11px}
+.wiz-preview{border:1px solid var(--line);background:var(--bg-preview);padding:10px 14px;font-size:12.5px;
+color:var(--gold);word-break:break-all;margin-bottom:12px}
+.qtable{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.qtable th{color:var(--muted);font-weight:400;font-size:11.5px;padding:5px 8px;
+border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.qtable td{padding:8px;border-bottom:1px solid var(--bg-rowline);vertical-align:middle}
+.qtable .qname{min-width:0}
+.qtable .qname .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qtable .qname small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.lamp{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:7px}
+.lamp.completed{background:#615c56}
+.lamp.downloading{background:#5a8f5a;box-shadow:0 0 6px #5a8f5a88}
+.lamp.queued{background:#5a7fa0;box-shadow:0 0 6px #5a7fa088}
+.lamp.failed{background:#8e2232;box-shadow:0 0 6px #8e223288}
+.lamp.cancelled,.lamp.interrupted{background:#8d877d}
+.qstat{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.tcancel2{border:1px solid var(--line);background:transparent;color:#8d877d;padding:4px 10px;
+font-family:inherit;font-size:11px;cursor:pointer;border-radius:2px}
+.tcancel2:hover:not(:disabled){color:#d98691;border-color:var(--blood)}
+.tcancel2:disabled{opacity:.28;cursor:default}
+/* ── 插件配置 ── */
+.cfg-form{max-width:640px}
+.cfg-form .field{display:flex;align-items:center;gap:14px;padding:11px 0;
+border-bottom:1px solid var(--bg-rowline)}
+.cfg-form .field > label{width:170px;flex-shrink:0;color:var(--muted);font-size:12.5px}
+.cfg-form .field .ctrl{flex:1;min-width:0}
+.cfg-form input[type=text],.cfg-form input[type=number]{width:100%;height:34px;border:1px solid var(--line);
+border-radius:2px;background:var(--bg-input);color:var(--bone);padding:0 12px;font-family:inherit;font-size:13px;outline:none}
+.cfg-form input:focus{border-color:var(--gold)}
+.cfg-form select{width:100%;height:34px;border:1px solid var(--line);border-radius:2px;
+background:var(--bg-input);color:var(--bone);padding:0 8px;font-family:inherit;font-size:13px}
+.cfg-form .switch{position:relative;width:44px;height:22px;display:inline-block;flex-shrink:0}
+.cfg-form .switch input{opacity:0;width:0;height:0}
+.cfg-form .slider{position:absolute;inset:0;background:var(--bg-rowline);border:1px solid var(--line);
+border-radius:2px;cursor:pointer;transition:.15s}
+.cfg-form .slider:before{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;
+background:var(--muted);border-radius:1px;transition:.15s}
+.cfg-form .switch input:checked + .slider{background:#3a2f1c;border-color:var(--gold)}
+.cfg-form .switch input:checked + .slider:before{transform:translateX(22px);background:var(--gold)}
+.cfg-form .hint{font-size:11px;color:#615c56;margin-top:4px}
+.cfg-actions{margin-top:20px;display:flex;gap:10px;align-items:center}
+.btn{border:1px solid var(--line);background:transparent;color:var(--bone);
+padding:7px 12px;border-radius:2px;cursor:pointer;font-family:inherit;font-size:12.5px}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{border-color:var(--gold);color:var(--gold)}
+.btn.danger{border-color:var(--blood);color:#d98691}
+html[data-theme="light"] .btn.danger{color:var(--blood)}
+html[data-theme="light"] .confirm .panel{border-top-color:var(--blood)}
+html[data-theme="light"] .badge.failed{color:var(--blood)}
+html[data-theme="light"] .vlib{color:var(--blood)}
+html[data-theme="light"] .mdel{background:#ffffffb0}
+html[data-theme="light"] .lamp.failed{box-shadow:0 0 6px #8e223266}
+html[data-theme="light"] .lamp.downloading{box-shadow:0 0 6px #5a8f5a66}
+html[data-theme="light"] .lamp.queued{box-shadow:0 0 6px #5a7fa066}
+/* 主题切换按钮 */
+.themeBtn{margin-left:auto;width:34px;height:34px;border:1px solid var(--line);background:transparent;
+color:var(--muted);cursor:pointer;border-radius:2px;display:inline-grid;place-items:center;padding:0;flex-shrink:0}
+.themeBtn:hover{border-color:var(--gold);color:var(--gold)}
+.themeBtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;
+stroke-linecap:round;stroke-linejoin:round}
+.themeBtn .ico-sun{display:none}
+html[data-theme="light"] .themeBtn .ico-sun{display:block}
+html[data-theme="light"] .themeBtn .ico-moon{display:none}
+.section-note{color:#615c56;font-size:11.5px;margin:0 0 14px}
+/* ── 灯箱/弹窗/Toast ── */
+.lightbox{display:none;position:fixed;inset:0;z-index:30;background:var(--bg-veil);
+flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:100%;max-height:58vh;object-fit:contain;border:1px solid var(--line)}
+.lb-bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.lb-bar .btn{background:var(--bg-icon)}
+.detail{width:min(860px,100%);margin-top:16px;background:var(--panel);border:1px solid var(--line);
+padding:16px 18px;max-height:28vh;overflow:auto;font-size:12.5px;line-height:1.8}
+.detail h3{margin:0 0 8px;font-size:13px;color:var(--gold);font-weight:500}
+.detail .row{display:flex;gap:10px}
+.detail .k{color:var(--muted);min-width:110px;flex-shrink:0}
+.detail .v{word-break:break-all;white-space:pre-wrap}
+.detail .v.url{color:var(--gold);text-decoration:underline;cursor:pointer}
+.icon{position:absolute;width:42px;height:42px;border:1px solid var(--line);border-radius:2px;
+background:var(--bg-icon);color:var(--bone);font-size:24px;cursor:pointer}
+.icon:hover{border-color:var(--gold)}
+.close{right:16px;top:16px}
+.confirm{display:none;position:fixed;inset:0;z-index:40;background:var(--bg-veil);place-items:center}
+.confirm.open{display:grid}
+.confirm .panel{width:min(400px,88vw);background:var(--panel);border:1px solid var(--line);
+border-top:3px solid var(--blood);padding:22px 24px}
+.confirm h4{margin:0 0 10px;font-size:14px;font-weight:500;color:var(--bone)}
+.confirm p{margin:0 0 18px;font-size:13px;color:var(--muted);line-height:1.7;word-break:break-all}
+.confirm .bar{display:flex;gap:10px;justify-content:flex-end}
+.toast-box{position:fixed;bottom:20px;right:20px;z-index:50;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--panel);border:1px solid var(--gold);border-left:3px solid var(--gold);
+color:var(--bone);padding:10px 16px;font-size:13px;border-radius:2px;max-width:320px}
+.toast.err{border-color:var(--blood);border-left-color:var(--blood)}
+@media(max-width:760px){
+  .layout{flex-direction:column}
+  aside{width:100%;flex-direction:row;align-items:center;padding:8px 12px;gap:4px}
+  aside .sec-title{display:none}
+  aside nav{flex-direction:row;flex-wrap:wrap;padding:0}
+  aside nav button{padding:7px 9px}
+  aside .count{display:none}
+  main{padding:14px 12px 50px}
+  header.topbar{gap:10px;padding:0 12px}
+  .topbar h1 small{display:none}
+  th.c-time{width:0}
+  td.time{display:none}
+  th.c-id{width:76px}th.c-tpl{width:96px}
+  .detail{max-height:34vh}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="ornament">†</span>
+    <h1>ComfyUI MCP工作台<small>ASYNC DRAW WORKBENCH</small></h1>
+  </div>
+  <nav class="primary" id="primaryNav">
+    <button data-tab="archive" class="active">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      生成档案
+    </button>
+    <button data-tab="models">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><path d="M3.3 7.5L12 12l8.7-4.5M12 22V12"/></svg>
+      模型管理
+    </button>
+    <button data-tab="dl">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      CivitAI 下载
+    </button>
+    <button data-tab="config">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      插件配置
+    </button>
+  </nav>
+  <button class="themeBtn" id="themeBtn" title="切换日间/夜间模式" aria-label="切换日间/夜间模式">
+    <svg class="ico-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+    <svg class="ico-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
+</header>
+
+<div class="layout">
+  <aside>
+    <div id="sideArchive">
+      <div class="sec-title">任务状态</div>
+      <nav id="statusNav">
+        <button data-status="" class="active">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          全部状态 <span class="count" id="cntAll"></span>
+        </button>
+        <button data-status="completed">
+          <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          已完成 <span class="count" id="cntCompleted"></span>
+        </button>
+        <button data-status="failed">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          失败 <span class="count" id="cntFailed"></span>
+        </button>
+        <button data-status="pending">
+          <svg viewBox="0 0 24 24"><path d="M12 3v18M5 10l7-7 7 7"/></svg>
+          排队中 <span class="count" id="cntPending"></span>
+        </button>
+      </nav>
+    </div>
+    <div id="sideModels" style="display:none">
+      <div class="sec-title">模型文件夹</div>
+      <nav id="modelTree" class="tree"></nav>
+    </div>
+    <div id="sideDl" style="display:none">
+      <div class="sec-title">CivitAI 下载</div>
+      <nav id="dlNav">
+        <button data-dl="find" class="active">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          查找模型
+        </button>
+        <button data-dl="queue">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+          下载队列
+        </button>
+      </nav>
+    </div>
+
+    <div id="sideConfig" style="display:none">
+      <div class="sec-title">配置分组</div>
+      <nav id="configNav">
+        <button data-cfg="comfyui" class="active">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg>
+          ComfyUI 配置
+        </button>
+        <button data-cfg="civitai">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/></svg>
+          CivitAI 配置
+        </button>
+        <button data-cfg="r2">
+          <svg viewBox="0 0 24 24"><path d="M18 8h1a3 3 0 010 6h-1M2 8h13v7a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg>
+          R2 图床配置
+        </button>
+      </nav>
+    </div>
+  </aside>
+
+  <main>
+    <!-- 生成档案 -->
+    <section class="view active" id="view-archive">
+      <div class="meta">
+        <h2>生成档案</h2>
+        <span id="stat">正在读取…</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="c-id">任务</th><th class="c-tpl">模板</th><th class="c-prompt">提示词</th>
+            <th class="c-time">生成时间</th><th class="c-thumb">缩略图</th><th class="c-del"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"><tr><td colspan="6" class="loading">载入中…</td></tr></tbody>
+      </table>
+      <footer>
+        <div class="sizebox">
+          每页
+          <select class="pagesize" id="pageSize">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="40">40</option>
+          </select>
+          条
+        </div>
+        <div class="pager" id="pager"></div>
+        <span class="pageinfo" id="pageInfo"></span>
+      </footer>
+    </section>
+
+    <!-- 模型管理 -->
+    <section class="view" id="view-models">
+      <div class="meta">
+        <h2 id="modelsTitle">Diffusion Models</h2>
+        <span id="modelsStat" style="color:var(--muted);font-size:12px"></span>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="modelsRefresh">刷新</button>
+        <button class="btn" id="modelsFetchAll">批量抓取 CivitAI</button>
+      </div>
+
+      <div class="mgrid" id="mGrid"><div class="loading">载入中…</div></div>
+    </section>
+
+    <!-- CivitAI 下载 -->
+    <section class="view" id="view-dl">
+      <div id="dlFind">
+        <div class="meta"><h2>从 URL 下载</h2></div>
+        <div class="wizard">
+          <div class="step" id="wizStep1">
+            <label>① 粘贴 CivitAI 模型页面 URL</label>
+            <div class="wiz-row">
+              <input id="wizUrl" type="text" placeholder="https://civitai.red/models/12345?modelVersionId=67890">
+              <button class="btn primary" id="wizNext1">下一步</button>
+            </div>
+          </div>
+          <div class="step" id="wizStep2" style="display:none">
+            <label>② 选择版本（灰字为已在本库）</label>
+            <div id="wizVersions" class="vlist"></div>
+            <div class="wiz-row">
+              <span id="wizLibHint" style="color:var(--gold);font-size:12px"></span>
+              <button class="btn primary" id="wizNext2" disabled>下一步</button>
+            </div>
+          </div>
+          <div class="step" id="wizStep3" style="display:none">
+            <label>③ 落盘路径</label>
+            <div class="wiz-opt">
+              <label class="wiz-switch"><input type="checkbox" id="wizDefault" checked><span></span> 使用默认路径</label>
+              <span class="wiz-hint">默认规则：基模 → diffusion_models/{基础模型}，LoRA → loras/{基础模型}；sdxl 等需进 checkpoints 的请关闭后手动选择</span>
+            </div>
+            <div class="wiz-preview" id="wizPathPreview"></div>
+            <div class="wiz-row" id="wizCustomPath" style="display:none">
+              <select id="wizFolder">
+                <option value="diffusion_models">diffusion_models</option>
+                <option value="checkpoints">checkpoints</option>
+                <option value="loras">loras</option>
+              </select>
+              <input id="wizSub" type="text" placeholder="子目录（如 Anima，可留空）">
+            </div>
+            <div class="wiz-row" style="margin-top:16px">
+              <span id="wizFileInfo" style="color:var(--muted);font-size:12px"></span>
+              <button class="btn primary" id="wizDownload">开始下载</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta" style="margin-top:28px"><h2>关键词搜索</h2></div>
+        <div class="dl-search">
+          <input id="dlQuery" type="text" placeholder="搜索 CivitAI 模型（站点由插件配置决定：红站全量 / 蓝站 SFW）">
+          <select id="dlType">
+            <option value="">全部类型</option>
+            <option value="Checkpoint">Checkpoint</option>
+            <option value="LORA">LORA</option>
+            <option value="LoCon">LoCon</option>
+            <option value="DoRA">DoRA</option>
+            <option value="Diffusion Model">Diffusion Model</option>
+            <option value="UNet">UNet</option>
+          </select>
+          <button class="btn" id="dlSearchBtn">搜索</button>
+        </div>
+        <div class="sgrid" id="dlResults"><div class="loading">输入关键词开始搜索，或使用上方 URL 向导</div></div>
+        <div style="text-align:center;margin:8px 0">
+          <button class="btn" id="dlMore" style="display:none">加载更多</button>
+        </div>
+      </div>
+
+      <div id="dlQueue" style="display:none">
+        <div class="meta"><h2>下载队列</h2><span id="dlQueueStat" style="color:var(--muted);font-size:12px"></span></div>
+        <table class="qtable">
+          <thead><tr>
+            <th style="width:52px">序号</th><th>模型名称</th><th style="width:170px">下载进度</th>
+            <th style="width:158px">状态</th><th style="width:64px"></th><th style="width:64px"></th>
+          </tr></thead>
+          <tbody id="dlQueueBody"><tr><td colspan="6" class="loading">暂无下载任务</td></tr></tbody>
+        </table>
+        <footer>
+          <div class="sizebox">
+            每页
+            <select class="pagesize" id="dlPageSize">
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="40">40</option>
+            </select>
+            条
+          </div>
+          <div class="pager" id="dlPager"></div>
+          <span class="pageinfo" id="dlPageInfo"></span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- 插件配置 -->
+    <section class="view" id="view-config">
+      <div class="meta"><h2 id="cfgTitle">ComfyUI 配置</h2></div>
+      <p class="section-note">修改 MCP 地址等运行时参数后需重载插件生效。</p>
+      <div class="cfg-form" id="cfgForm"></div>
+      <div class="cfg-actions">
+        <button class="btn primary" id="cfgSave">保存配置</button>
+        <button class="btn" id="cfgReload">还原</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="lightbox" class="lightbox" role="dialog" aria-modal="true">
+  <button class="icon close" title="关闭" aria-label="关闭">×</button>
+  <img id="full" alt="">
+  <div class="lb-bar">
+    <button class="btn" id="copyUrl">复制图床URL</button>
+    <button class="btn" id="resend">重新推送</button>
+  </div>
+  <div id="detail" class="detail"></div>
+</div>
+
+<div id="confirmBox" class="confirm" role="dialog" aria-modal="true">
+  <div class="panel">
+    <h4 id="confirmTitle">确认操作</h4>
+    <p id="confirmMsg"></p>
+    <div class="bar">
+      <button class="btn" id="confirmNo">取消</button>
+      <button class="btn" id="confirmYes"><span id="confirmYesText">删除</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="modelLb" class="lightbox" role="dialog" aria-modal="true">
+  <button class="icon close" title="关闭" aria-label="关闭">×</button>
+  <img id="mFull" alt="" style="display:none">
+  <video id="mVideo" controls autoplay muted loop style="display:none;max-width:100%;max-height:58vh;border:1px solid var(--line)"></video>
+  <div class="lb-bar">
+    <button class="btn" id="mOpenCivitai">打开 CivitAI 页面</button>
+    <button class="btn" id="mFetch">抓取 CivitAI 信息</button>
+    <button class="btn" id="mDel" style="border-color:var(--blood);color:#d98691">删除</button>
+  </div>
+  <div id="mDetail" class="detail"></div>
+</div>
+
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+(function(){
+'use strict';
+var EXT = '/api/plugin/plugins/extensions/astrbot_plugin_comfyui_async_workbench';
+
+/* ── 主题切换（记忆到 localStorage，沙箱不可用时静默降级） ── */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+}
+try {
+  var saved = localStorage.getItem('wb_theme');
+  applyTheme(saved === 'light' ? 'light' : 'dark');
+} catch(e){ /* 沙箱禁 localStorage */ }
+document.getElementById('themeBtn').addEventListener('click', function(){
+  var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(cur);
+  try { localStorage.setItem('wb_theme', cur); } catch(e){}
+});
+var state = {page:1, size:10, statFilter:'', total:0, lastPage:1};
+var tasks = {}, current = null;
+var cfgGroups = null, cfgSub = 'comfyui';
+
+function initBridge(cb){
+  var n = 0;
+  (function wait(){
+    if(window.AstrBotPluginPage){ window.AstrBotPluginPage.ready().then(function(){cb();}); return; }
+    if(++n > 20){ cb(); return; }
+    setTimeout(wait, 100);
+  })();
+}
+
+function api(path, params, method, body){
+  var relPath = path.replace(/^\//, '');
+  if(window.AstrBotPluginPage){
+    if(method === 'POST'){ return window.AstrBotPluginPage.apiPost(relPath, body || {}); }
+    return window.AstrBotPluginPage.apiGet(relPath, params || {});
+  }
+  var url = EXT + path;
+  if(params){ Object.keys(params).forEach(function(k){ url += (url.indexOf('?')<0?'?':'&')+encodeURIComponent(k)+'='+encodeURIComponent(params[k]); }); }
+  var opts = {method: method || 'GET', credentials: 'same-origin'};
+  if(body){ opts.headers = {'Content-Type':'application/json'}; opts.body = JSON.stringify(body); }
+  return fetch(url, opts).then(function(r){
+    return r.json().then(function(j){
+      if(j.status === 'error'){ throw new Error(j.message || '请求失败'); }
+      return j;
+    });
+  });
+}
+
+function toast(msg, err){
+  var box = document.getElementById('toastBox');
+  var el = document.createElement('div');
+  el.className = 'toast' + (err ? ' err' : '');
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(function(){ el.style.opacity='0'; el.style.transition='all .25s'; setTimeout(function(){ el.remove(); }, 260); }, 2600);
+}
+
+var confirmResolve = null;
+function showConfirm(msg, title, okText, danger){
+  document.getElementById('confirmTitle').textContent = title || '确认操作';
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmYesText').textContent = okText || '删除';
+  document.getElementById('confirmYes').className = 'btn ' + (danger === false ? 'primary' : 'danger');
+  document.getElementById('confirmBox').classList.add('open');
+  return new Promise(function(resolve){ confirmResolve = resolve; });
+}
+document.getElementById('confirmYes').addEventListener('click', function(){
+  document.getElementById('confirmBox').classList.remove('open');
+  if(confirmResolve){ confirmResolve(true); confirmResolve = null; }
+});
+document.getElementById('confirmNo').addEventListener('click', function(){
+  document.getElementById('confirmBox').classList.remove('open');
+  if(confirmResolve){ confirmResolve(false); confirmResolve = null; }
+});
+
+function fmtDate(s){
+  if(!s) return '';
+  try { return new Date(s).toLocaleString('zh-CN', {hour12:false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}); } catch(e){ return s; }
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function stCn(s){ return {completed:'完成', failed:'失败', running:'执行中', pending:'排队中'}[s] || s; }
+function iconSvg(name){
+  var paths = {
+    first: '<path d="M18 5l-7 7 7 7M7 5v14"/>',
+    prev: '<path d="M15 5l-7 7 7 7"/>',
+    next: '<path d="M9 5l7 7-7 7"/>',
+    last: '<path d="M6 5l7 7-7 7M17 5v14"/>'
+  };
+  return '<svg viewBox="0 0 24 24">' + (paths[name] || '') + '</svg>';
+}
+
+/* ── 一级/二级菜单切换 ── */
+function switchTab(tab){
+  document.querySelectorAll('#primaryNav button').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+  });
+  ['archive', 'models', 'dl', 'config'].forEach(function(t){
+    var v = document.getElementById('view-' + t);
+    if(v){ v.classList.toggle('active', t === tab); }
+    var s = document.getElementById('side' + t.charAt(0).toUpperCase() + t.slice(1));
+    if(s){ s.style.display = (t === tab) ? '' : 'none'; }
+  });
+  if(tab === 'config' && !cfgGroups){ loadConfig(); }
+  if(tab === 'models' && !mstate.loaded){ loadModels(false); }
+}
+document.querySelectorAll('#primaryNav button').forEach(function(b){
+  b.addEventListener('click', function(){ switchTab(b.getAttribute('data-tab')); });
+});
+
+/* ── 分页 ── */
+function pgBtn(content, title, page, off){
+  return '<button type="button" class="pgbtn' + (off ? ' off' : '') + '" data-page="' + page +
+    '" title="' + title + '" aria-label="' + title + '"' + (off ? ' disabled' : '') + '>' + content + '</button>';
+}
+function renderPager(){
+  var totalPages = Math.max(1, Math.ceil(state.total / state.size));
+  state.lastPage = totalPages;
+  var p = state.page;
+  var html = pgBtn(iconSvg('first'), '首页', 1, p === 1);
+  html += pgBtn(iconSvg('prev'), '上一页', p - 1, p === 1);
+  var start = Math.max(1, p - 3), end = Math.min(totalPages, start + 6);
+  start = Math.max(1, end - 6 > 0 ? end - 6 : 1);
+  for(var i = start; i <= end; i++){
+    html += pgBtn(String(i), '第 ' + i + ' 页', i, i === p);
+  }
+  html += pgBtn(iconSvg('next'), '下一页', p + 1, p === totalPages);
+  html += pgBtn(iconSvg('last'), '末页', totalPages, p === totalPages);
+  var pager = document.getElementById('pager');
+  pager.innerHTML = html;
+  pager.querySelectorAll('.pgbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var tp = parseInt(b.getAttribute('data-page'), 10);
+      if(isNaN(tp) || tp < 1 || tp > state.lastPage){ return; }
+      state.page = tp;
+      load();
+    });
+  });
+  document.getElementById('pageInfo').textContent = state.total ?
+    (state.total + ' 条 · ' + state.page + '/' + totalPages) : '';
+}
+
+/* ── 任务列表 ── */
+function load(){
+  document.getElementById('stat').textContent = '载入中…';
+  api('/tasks', {page:state.page, size:state.size, status:state.statFilter}).then(function(j){
+    var data = (j && j.items) ? j.items : (Array.isArray(j) ? j : []);
+    state.total = (j && j.total) || data.length || 0;
+    tasks = {};
+    var running = [], rest = [];
+    data.forEach(function(t){
+      tasks[t.id] = t;
+      if(t.status === 'running'){ running.push(t); } else { rest.push(t); }
+    });
+    var ordered = running.concat(rest);
+    var tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    ordered.forEach(function(t){ tbody.appendChild(row(t)); });
+    if(!ordered.length){
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">档案中尚无任务<br>让莉莉娅画一张试试吧</td></tr>';
+    }
+    document.getElementById('stat').textContent = '共 ' + state.total + ' 个任务';
+    renderPager();
+    refreshCounts();
+  }).catch(function(e){
+    document.getElementById('stat').textContent = '载入失败';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="6" class="empty">载入失败：' + esc(e.message) + '</td></tr>';
+  });
+}
+
+function refreshCounts(){
+  ['completed','failed','pending'].forEach(function(st){
+    api('/tasks', {page:1, size:1, status:st}).then(function(j){
+      var n = (j && j.total) || 0;
+      var el = document.getElementById('cnt' + st.charAt(0).toUpperCase() + st.slice(1));
+      if(el){ el.textContent = n ? String(n) : ''; }
+    }).catch(function(){});
+  });
+  api('/tasks', {page:1, size:1}).then(function(j){
+    var el = document.getElementById('cntAll');
+    if(el){ el.textContent = (j && j.total) || 0; }
+  }).catch(function(){});
+}
+
+function row(t){
+  var tr = document.createElement('tr');
+  var fullPrompt = t.prompt || '';
+  tr.innerHTML =
+    '<td class="id">#' + t.id + ' <span class="badge ' + t.status + '">' + stCn(t.status) + '</span></td>' +
+    '<td class="tpl" title="' + esc(t.template) + '">' + esc(t.template) + '</td>' +
+    '<td class="prompt"><div class="p" title="' + esc(fullPrompt) + '">' + esc(fullPrompt) + '</div>' +
+      (t.status === 'failed' && t.error ? '<div class="e" title="' + esc(t.error) + '">' + esc(String(t.error).slice(0, 70)) + '</div>' : '') + '</td>' +
+    '<td class="time">' + esc(fmtDate(t.completed_at || t.created_at)) + '</td>';
+
+  var tdThumb = document.createElement('td');
+  tdThumb.className = 'thumb';
+  var box = document.createElement('span');
+  box.className = 'box';
+  if(t.status === 'completed' && t.has_file){
+    var img = document.createElement('img');
+    img.alt = t.template; img.loading = 'lazy'; img.decoding = 'async';
+    box.appendChild(img);
+    box.addEventListener('click', function(){ openLb(t); });
+    api('/image', {task_id: t.id, mode: 'thumb'}).then(function(r){
+      img.src = (r && r.data_uri) || '';
+    }).catch(function(){});
+  } else {
+    var ph = document.createElement('span');
+    ph.className = 'ph';
+    ph.textContent = t.status === 'failed' ? '失败' : (t.status === 'completed' ? '无文件' : '生成中');
+    box.appendChild(ph);
+    box.addEventListener('click', function(){ openLb(t); });
+  }
+  tdThumb.appendChild(box);
+  tr.appendChild(tdThumb);
+
+  var tdDel = document.createElement('td');
+  tdDel.className = 'del';
+  var del = document.createElement('button');
+  del.className = 'delbtn';
+  del.title = '删除任务 #' + t.id;
+  del.setAttribute('aria-label', '删除任务 #' + t.id);
+  del.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
+  del.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if(t.status === 'pending' || t.status === 'running'){
+      toast('任务执行中，不能删除', true);
+      return;
+    }
+    showConfirm('删除任务 #' + t.id + '？本地图片与记录将移除（R2 画廊对象保留）。', '删除确认').then(function(yes){
+      if(!yes){ return; }
+      api('/delete', null, 'POST', {task_id: t.id}).then(function(j){
+        toast((j && j.message) || ('任务 #' + t.id + ' 已删除'));
+        load();
+      }).catch(function(e){ toast('删除失败：' + e.message, true); });
+    });
+  });
+  tdDel.appendChild(del);
+  tr.appendChild(tdDel);
+  return tr;
+}
+
+/* ── 灯箱 ── */
+function openLb(t){
+  current = t;
+  var full = document.getElementById('full');
+  full.removeAttribute('src');
+  document.getElementById('detail').innerHTML = '载入详情…';
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  api('/task', {task_id: t.id}).then(function(d){
+    renderDetail(d && d.items ? d.items : d);
+  }).catch(function(e){
+    document.getElementById('detail').innerHTML = '详情载入失败：' + esc(e.message);
+  });
+  if(t.has_file){
+    api('/image', {task_id: t.id, mode: 'full'}).then(function(r){
+      if(current && current.id === t.id){ full.src = (r && r.data_uri) || ''; }
+    }).catch(function(){});
+  }
+}
+
+function renderDetail(d){
+  if(d && d.data){ d = d.data; }
+  var m = d.metadata || {};
+  var rows = [
+    ['任务', '#' + d.id + '（' + stCn(d.status) + '）'],
+    ['模板', d.template],
+    ['提示词', d.prompt],
+    ['模型', m.model || '—'],
+    ['图床URL', d.image_url || '（未上传）'],
+    ['本地文件', d.image_path || d.local_url || '—'],
+    ['完成时间', fmtDate(d.completed_at)]
+  ];
+  var html = '<h3>任务详情</h3>';
+  rows.forEach(function(r){
+    var isUrl = r[0] === '图床URL' && r[1] && r[1].indexOf('http') === 0;
+    html += '<div class="row"><span class="k">' + esc(r[0]) + '</span><span class="v' +
+      (isUrl ? ' url' : '') + '" ' + (isUrl ? 'data-url="' + esc(r[1]) + '"' : '') + '>' +
+      esc(r[1]) + '</span></div>';
+  });
+  document.getElementById('detail').innerHTML = html;
+  var urlEl = document.querySelector('#detail .v.url');
+  if(urlEl){ urlEl.addEventListener('click', function(){
+    window.open(urlEl.getAttribute('data-url'), '_blank');
+  }); }
+}
+
+function closeLb(){
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('full').removeAttribute('src');
+  document.body.style.overflow = '';
+  current = null;
+}
+
+function copyText(s, msg){
+  var done = function(){ toast(msg); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(s).then(done, function(){ fallbackCopy(s, done); });
+  } else { fallbackCopy(s, done); }
+}
+function fallbackCopy(s, done){
+  var ta = document.createElement('textarea');
+  ta.value = s; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ toast('复制失败', true); }
+  ta.remove();
+}
+
+/* ── 模型管理 ── */
+var FOLDER_TITLES = {checkpoints: 'Checkpoints', diffusion_models: 'Diffusion Models', loras: 'Loras'};
+var FOLDER_ICONS = {
+  checkpoints: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
+  diffusion_models: '<svg viewBox="0 0 24 24"><path d="M2 12h5l2-3h6l2 3h5v8H2z"/></svg>',
+  loras: '<svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>'
+};
+var FOLDER_ORDER = ['diffusion_models', 'checkpoints', 'loras'];
+var mstate = {folder: 'diffusion_models', sub: '', all: {}, current: null, loaded: false, pageUrl: ''};
+
+function fmtSize(n){
+  if(!n){ return '0 B'; }
+  var units = ['B','KB','MB','GB','TB'], i = 0, v = n;
+  while(v >= 1024 && i < units.length - 1){ v /= 1024; i++; }
+  return (v >= 100 ? Math.round(v) : v.toFixed(1)) + ' ' + units[i];
+}
+
+/* ── 目录树 ── */
+function buildTree(){
+  var nav = document.getElementById('modelTree');
+  nav.innerHTML = '';
+  FOLDER_ORDER.forEach(function(f){
+    var wrap = document.createElement('div');
+    wrap.className = 'folder-wrap';
+    var models = mstate.all[f] || [];
+    var h = document.createElement('button');
+    h.className = (mstate.folder === f && !mstate.sub ? 'active ' : '') +
+      (mstate.folder === f ? '' : 'collapsed ');
+    h.innerHTML = '<span class="arrow">▾</span>' + FOLDER_ICONS[f] + FOLDER_TITLES[f] +
+      '<span class="count">' + models.length + '</span>';
+    h.addEventListener('click', function(){
+      if(mstate.folder === f && !mstate.sub){ h.classList.toggle('collapsed'); return; }
+      mstate.folder = f; mstate.sub = '';
+      ensureFolder(f, true); buildTree(); renderMCards();
+    });
+    wrap.appendChild(h);
+    var children = document.createElement('div');
+    children.className = 'children';
+    // 按 sub_dir 分组计数
+    var groups = {};
+    models.forEach(function(m){
+      var k = m.sub_dir && m.sub_dir !== '.' ? m.sub_dir : '';
+      groups[k] = (groups[k] || 0) + 1;
+    });
+    Object.keys(groups).sort().forEach(function(sub){
+      var b = document.createElement('button');
+      b.className = 'sub-btn' + (mstate.folder === f && mstate.sub === sub ? ' active' : '');
+      b.innerHTML = (sub ? esc(sub) : '根目录') + '<span class="count">' + groups[sub] + '</span>';
+      b.addEventListener('click', function(){
+        mstate.folder = f; mstate.sub = sub;
+        ensureFolder(f, true); buildTree(); renderMCards();
+      });
+      children.appendChild(b);
+    });
+    wrap.appendChild(children);
+    nav.appendChild(wrap);
+  });
+}
+
+function ensureFolder(folder, force){
+  if(force || !mstate.all[folder]){
+    api('/models/list', {folder: folder}).then(function(j){
+      mstate.all[folder] = j.items || [];
+      buildTree();
+      if(mstate.folder === folder){ renderMCards(); }
+    }).catch(function(){});
+  }
+}
+
+function loadModels(refresh){
+  document.getElementById('modelsTitle').textContent =
+    FOLDER_TITLES[mstate.folder] + (mstate.sub ? ' / ' + mstate.sub : '');
+  document.getElementById('modelsStat').textContent = '';
+  var grid = document.getElementById('mGrid');
+  grid.innerHTML = '<div class="loading">扫描中…</div>';
+  api('/models/list', {folder: mstate.folder, refresh: refresh ? '1' : ''}).then(function(j){
+    mstate.all[mstate.folder] = j.items || [];
+    mstate.loaded = true;
+    buildTree();
+    renderMCards();
+    // 顺带预热其他文件夹（供目录树计数）
+    FOLDER_ORDER.forEach(function(f){ if(f !== mstate.folder){ ensureFolder(f, false); } });
+  }).catch(function(e){
+    grid.innerHTML = '<div class="loading">载入失败：' + esc(e.message) + '</div>';
+  });
+}
+
+function renderMCards(){
+  var grid = document.getElementById('mGrid');
+  grid.innerHTML = '';
+  var models = (mstate.all[mstate.folder] || []).filter(function(m){
+    var k = m.sub_dir && m.sub_dir !== '.' ? m.sub_dir : '';
+    return !mstate.sub || k === mstate.sub;
+  });
+  document.getElementById('modelsTitle').textContent =
+    FOLDER_TITLES[mstate.folder] + (mstate.sub ? ' / ' + mstate.sub : '');
+  document.getElementById('modelsStat').textContent = models.length + ' 个模型';
+  if(!models.length){
+    grid.innerHTML = '<div class="loading">此目录暂无模型文件</div>';
+    return;
+  }
+  models.forEach(function(m){ grid.appendChild(mCard(m)); });
+}
+
+function mCard(m){
+    var card = document.createElement('article');
+    card.className = 'mcard';
+    var thumb = document.createElement('div');
+    thumb.className = 'mthumb';
+    if(m.preview_rel && (m.preview_kind === 'image' || m.preview_kind === 'video')){
+      // 图片走缩略图；视频同样请求缩略图接口（后端抽首帧）
+      var img = document.createElement('img');
+      img.alt = m.name; img.loading = 'lazy'; img.decoding = 'async';
+      thumb.appendChild(img);
+      api('/model/preview', {path: m.preview_rel}).then(function(r){
+        img.src = (r && r.data_uri) || '';
+      }).catch(function(){});
+      if(m.preview_kind === 'video'){
+        var vb = document.createElement('span');
+        vb.className = 'vid';
+        vb.textContent = '▶ 视频';
+        thumb.appendChild(vb);
+      }
+    } else {
+      var ph = document.createElement('span');
+      ph.className = 'noimg';
+      ph.textContent = '†';
+      thumb.appendChild(ph);
+    }
+    thumb.addEventListener('click', function(){ openMLb(m); });
+    var del = document.createElement('button');
+    del.className = 'mdel';
+    del.title = '删除 ' + m.name;
+    del.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
+    del.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      confirmDeleteModel(m);
+    });
+    thumb.appendChild(del);
+    var info = document.createElement('div');
+    info.className = 'minfo';
+    var civTag = m.from_civitai
+      ? '<span class="mtag on" title="已收录 CivitAI 元数据">CivitAI</span>'
+      : (m.civitai_deleted ? '<span class="mtag" title="CivitAI 未收录该模型">未收录</span>' : '');
+    var typeTag = m.model_type ? '<span class="mtag">' + esc(m.model_type) + '</span>' : '';
+    info.innerHTML =
+      '<span class="mname" title="' + esc(m.name) + '">' + esc(m.name) + '</span>' +
+      '<span class="msub">' + civTag + typeTag +
+      '<span>' + fmtSize(m.size) + '</span>' +
+      (m.base_model ? '<span style="overflow:hidden;text-overflow:ellipsis">' + esc(m.base_model) + '</span>' : '') +
+      '</span>';
+    card.appendChild(thumb);
+    card.appendChild(info);
+    return card;
+}
+
+function confirmDeleteModel(m){
+  showConfirm('删除模型「' + m.name + '」？将同时删除模型文件、metadata.json 和预览文件（不可恢复）。', '删除模型').then(function(yes){
+    if(!yes){ return; }
+    api('/model/delete', null, 'POST', {path: m.rel_path}).then(function(j){
+      toast((j && j.message) || '已删除');
+      loadModels(true);
+    }).catch(function(e){ toast('删除失败：' + e.message, true); });
+  });
+}
+
+function openMLb(m){
+  mstate.current = m;
+  var full = document.getElementById('mFull');
+  var video = document.getElementById('mVideo');
+  full.removeAttribute('src'); full.style.display = 'none';
+  video.removeAttribute('src'); video.style.display = 'none'; video.pause();
+  document.getElementById('mDetail').innerHTML = '载入详情…';
+  document.getElementById('modelLb').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  api('/model/detail', {path: m.rel_path}).then(function(d){
+    renderMDetail(d);
+  }).catch(function(e){
+    document.getElementById('mDetail').innerHTML = '详情载入失败：' + esc(e.message);
+  });
+  if(m.preview_kind === 'video' && m.preview_rel){
+    api('/model/preview', {path: m.preview_rel, mode: 'video'}).then(function(r){
+      if(mstate.current && mstate.current.rel_path === m.rel_path && r && r.data_uri){
+        video.src = r.data_uri;
+        video.style.display = '';
+        video.play().catch(function(){});
+      }
+    }).catch(function(){
+      // 视频不可用时回退首帧
+      api('/model/preview', {path: m.preview_rel}).then(function(r){
+        if(mstate.current && mstate.current.rel_path === m.rel_path && r && r.data_uri){
+          full.src = r.data_uri;
+          full.style.display = '';
+        }
+      }).catch(function(){});
+    });
+  } else if(m.preview_kind === 'image' && m.preview_rel){
+    api('/model/preview', {path: m.preview_rel}).then(function(r){
+      if(mstate.current && mstate.current.rel_path === m.rel_path){
+        full.src = (r && r.data_uri) || '';
+        full.style.display = '';
+      }
+    }).catch(function(){});
+  }
+}
+
+function renderMDetail(d){
+  var c = d.civitai_summary || {};
+  var rows = [
+    ['文件', d.file_name],
+    ['位置', d.rel_path],
+    ['大小', fmtSize(d.size)],
+    ['类型', d.model_type || '—'],
+    ['基础模型', d.base_model || '—'],
+    ['CivitAI 版本', c.version_name || '—'],
+    ['下载量', c.download_count != null ? c.download_count : '—'],
+    ['训练词', (c.trained_words || []).join(', ') || '—'],
+    ['SHA256', d.sha256 ? d.sha256.slice(0, 16) + '…' : '（未计算）'],
+    ['备注', d.notes || '—']
+  ];
+  var html = '<h3>' + esc(d.name) + '</h3>';
+  if(c.description){
+    html += '<div class="row"><span class="k">描述</span><span class="v">' +
+      esc(c.description.replace(/<[^>]+>/g, ' ').slice(0, 300)) + (c.description.length > 300 ? '…' : '') + '</span></div>';
+  }
+  rows.forEach(function(r){
+    html += '<div class="row"><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+  });
+  document.getElementById('mDetail').innerHTML = html;
+  mPageUrl = c.model_page || '';
+  var btn = document.getElementById('mOpenCivitai');
+  btn.textContent = mPageUrl ? '复制 CivitAI 链接' : '打开 CivitAI 页面';
+  btn.style.display = '';
+}
+document.getElementById('mOpenCivitai').addEventListener('click', function(){
+  if(!mPageUrl){
+    toast('该模型没有 CivitAI 页面链接（未收录）', true);
+    return;
+  }
+  // 沙箱 iframe 无 allow-popups，window.open 不可用；复制链接由用户粘贴到浏览器
+  copyText(mPageUrl, 'CivitAI 链接已复制，请粘贴到浏览器打开');
+});
+
+function closeMLb(){
+  document.getElementById('modelLb').classList.remove('open');
+  document.getElementById('mFull').removeAttribute('src');
+  var video = document.getElementById('mVideo');
+  video.removeAttribute('src'); video.pause(); video.style.display = 'none';
+  document.getElementById('mFull').style.display = 'none';
+  document.body.style.overflow = '';
+  mstate.current = null;
+}
+
+document.getElementById('modelsRefresh').addEventListener('click', function(){
+  mstate.all = {};
+  loadModels(true);
+});
+
+/* 单个抓取 / 批量抓取 */
+var fetchTimer = null;
+/* CivitAI 下载：二级菜单 / 向导 / 搜索 / 队列 */
+var wiz = {model: null, selected: null, defaultFolder: '', defaultSub: ''};
+var dlState = {cursor: '', query: '', type: '', timer: null};
+
+document.querySelectorAll('#dlNav button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('#dlNav button').forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    var isQueue = b.getAttribute('data-dl') === 'queue';
+    document.getElementById('dlFind').style.display = isQueue ? 'none' : '';
+    document.getElementById('dlQueue').style.display = isQueue ? '' : 'none';
+    if(isQueue){ refreshDlQueue(); }
+    else { stopDlTimer(); }
+  });
+});
+
+/* ── 向导 ── */
+document.getElementById('wizNext1').addEventListener('click', wizLoadUrl);
+document.getElementById('wizUrl').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ wizLoadUrl(); }
+});
+
+function parseCivitaiUrl(u){
+  var m = u.match(/models\/(\d+)/);
+  if(!m){ return null; }
+  var vm = u.match(/modelVersionId=(\d+)/) || u.match(/models\/\d+\/(\d+)/);
+  return {modelId: parseInt(m[1], 10), versionId: vm ? parseInt(vm[1], 10) : null};
+}
+
+function wizLoadUrl(){
+  var u = document.getElementById('wizUrl').value.trim();
+  var p = parseCivitaiUrl(u);
+  if(!p){ toast('无法解析 URL，需要含 /models/12345 的地址', true); return; }
+  wizLoadModel(p.modelId, p.versionId);
+}
+
+function wizLoadModel(modelId, preselect){
+  var box = document.getElementById('wizVersions');
+  box.innerHTML = '<div class="loading">载入版本列表…</div>';
+  api('/civitai/model', {model_id: modelId}).then(function(j){
+    wiz.model = j;
+    var versions = j.versions || [];
+    document.getElementById('wizStep2').style.display = '';
+    document.getElementById('wizStep3').style.display = 'none';
+    document.getElementById('wizNext2').disabled = true;
+    document.getElementById('wizLibHint').textContent = '';
+    box.innerHTML = '';
+    if(!versions.length){ box.innerHTML = '<div class="loading">该模型没有可用版本</div>'; return; }
+    var libCount = 0;
+    versions.forEach(function(v){
+      var row = document.createElement('div');
+      row.className = 'vrow' + (v.in_library ? ' inlib' : '');
+      var sizeTxt = v.size_kb ? fmtSize(v.size_kb * 1024) : '未知';
+      var date = (v.created_at || '').slice(0, 10);
+      if(v.in_library){ libCount++; }
+      row.innerHTML =
+        '<span class="vname">' + esc(v.name) + '</span>' +
+        '<span class="vmeta">' + esc(v.base_model || '') + ' · ' + sizeTxt + ' · ' + date + '</span>' +
+        (v.in_library ? '<span class="vlib">已在库中</span>' : '');
+      if(!v.in_library){
+        row.addEventListener('click', function(){
+          document.querySelectorAll('#wizVersions .vrow').forEach(function(x){ x.classList.remove('sel'); });
+          row.classList.add('sel');
+          wiz.selected = v;
+          document.getElementById('wizNext2').disabled = false;
+        });
+      }
+      if(preselect && v.version_id === preselect && !v.in_library){ row.click(); }
+      box.appendChild(row);
+    });
+    // 有任一版本在库 → 金色提示
+    document.getElementById('wizLibHint').textContent = libCount
+      ? (libCount + ' 个版本已在库中（可选其他版本）') : '';
+    if(preselect){
+      document.getElementById('wizStep2').scrollIntoView({behavior: 'smooth'});
+    }
+  }).catch(function(e){
+    box.innerHTML = '<div class="loading">载入失败：' + esc(e.message) + '</div>';
+  });
+}
+
+document.getElementById('wizNext2').addEventListener('click', function(){
+  if(!wiz.selected){ return; }
+  var sel = wiz.selected;
+  var isLora = /lora|locon|dora|lycoris/i.test(wiz.model.type || '');
+  wiz.defaultFolder = isLora ? 'loras' : 'diffusion_models';
+  wiz.defaultSub = (sel.base_model || '').replace(/[\\/:*?"<>|]/g, '');
+  document.getElementById('wizDefault').checked = true;
+  var sizeTxt = sel.size_kb ? fmtSize(sel.size_kb * 1024) : '大小未知';
+  document.getElementById('wizFileInfo').textContent = '将下载：' + (sel.filename || sel.name) + '（' + sizeTxt + '）';
+  document.getElementById('wizStep3').style.display = '';
+  updateWizPreview();
+});
+
+function updateWizPreview(){
+  var useDefault = document.getElementById('wizDefault').checked;
+  document.getElementById('wizCustomPath').style.display = useDefault ? 'none' : 'flex';
+  var f = useDefault ? wiz.defaultFolder : document.getElementById('wizFolder').value;
+  var s = useDefault ? wiz.defaultSub : document.getElementById('wizSub').value.trim().replace(/[\\/:*?"<>|]/g, '');
+  document.getElementById('wizPathPreview').textContent =
+    '…/models/' + f + (s ? '/' + s : '') + '/' + (wiz.selected ? (wiz.selected.filename || '') : '');
+}
+document.getElementById('wizDefault').addEventListener('change', updateWizPreview);
+document.getElementById('wizFolder').addEventListener('change', updateWizPreview);
+document.getElementById('wizSub').addEventListener('input', updateWizPreview);
+
+document.getElementById('wizDownload').addEventListener('click', function(){
+  if(!wiz.selected){ return; }
+  var body = {version_id: wiz.selected.version_id};
+  if(!document.getElementById('wizDefault').checked){
+    body.folder = document.getElementById('wizFolder').value;
+    body.sub = document.getElementById('wizSub').value.trim();
+  }
+  api('/download/start', null, 'POST', body).then(function(j){
+    toast((j && j.message) || '已加入下载队列');
+    document.querySelector('#dlNav button[data-dl=queue]').click();
+  }).catch(function(e){ toast('下载启动失败：' + e.message, true); });
+});
+
+/* ── 关键词搜索 ── */
+document.getElementById('dlSearchBtn').addEventListener('click', function(){ dlSearch(true); });
+document.getElementById('dlQuery').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ dlSearch(true); }
+});
+document.getElementById('dlMore').addEventListener('click', function(){ dlSearch(false); });
+
+function dlSearch(reset){
+  if(reset){ dlState.cursor = ''; }
+  dlState.query = document.getElementById('dlQuery').value.trim();
+  dlState.type = document.getElementById('dlType').value;
+  var grid = document.getElementById('dlResults');
+  if(!dlState.query && !dlState.type && !dlState.cursor){
+    grid.innerHTML = '<div class="loading">输入关键词开始搜索，或使用上方 URL 向导</div>';
+    return;
+  }
+  grid.innerHTML = '<div class="loading">搜索中…</div>';
+  api('/civitai/search', {query: dlState.query, type: dlState.type, cursor: dlState.cursor}).then(function(j){
+    var items = j.items || [];
+    if(reset){ grid.innerHTML = ''; }
+    if(!items.length && reset){
+      grid.innerHTML = '<div class="loading">无结果（试试换关键词或类型）</div>';
+    }
+    items.forEach(function(it){ grid.appendChild(dlCard(it)); });
+    dlState.cursor = j.next_cursor || '';
+    document.getElementById('dlMore').style.display = dlState.cursor ? '' : 'none';
+  }).catch(function(e){
+    grid.innerHTML = '<div class="loading">搜索失败：' + esc(e.message) + '</div>';
+  });
+}
+
+function dlCard(it){
+  var el = document.createElement('div');
+  el.className = 'scard';
+  var imgHtml = it.preview_url
+    ? '<img src="' + esc(it.preview_url) + '" loading="lazy" data-proxy="' + esc(it.preview_url) + '">'
+    : '†';
+  var dlCount = it.download_count != null ? it.download_count.toLocaleString() : '—';
+  el.innerHTML =
+    '<div class="simg">' + imgHtml + '</div>' +
+    '<div class="sinfo">' +
+      '<span class="sname" title="' + esc(it.name) + '">' + esc(it.name) + '</span>' +
+      '<span class="smeta">' + esc(it.type || '') + (it.creator ? ' · ' + esc(it.creator) : '') +
+        ' · ↓' + dlCount + (it.base_model ? ' · ' + esc(it.base_model) : '') + '</span>' +
+    '</div>';
+  // 预览图兜底：浏览器直连失败 → 后端代理（走配置代理）
+  var img = el.querySelector('img');
+  if(img){
+    img.addEventListener('error', function(){
+      var url = img.getAttribute('data-proxy');
+      img.removeAttribute('data-proxy');
+      api('/civitai/image', {path: url}).then(function(r){
+        img.src = (r && r.data_uri) || '';
+        img.onerror = function(){ img.remove(); };
+      }).catch(function(){ img.remove(); });
+    }, {once: true});
+  }
+  var bar = document.createElement('div');
+  bar.className = 'srow2';
+  var btn = document.createElement('button');
+  btn.className = 'sdl';
+  btn.textContent = '选用';
+  btn.title = '载入到 URL 向导选择版本';
+  btn.addEventListener('click', function(){
+    document.getElementById('wizUrl').value = 'https://civitai.red/models/' + it.model_id;
+    wizLoadModel(it.model_id, it.version_id);
+    document.getElementById('wizStep1').scrollIntoView({behavior: 'smooth'});
+  });
+  bar.appendChild(btn);
+  el.appendChild(bar);
+  return el;
+}
+
+/* ── 下载队列 ── */
+var qstate = {page: 1, size: 10, total: 0, lastPage: 1, items: []};
+
+function renderQPager(){
+  var totalPages = Math.max(1, Math.ceil(qstate.total / qstate.size));
+  qstate.lastPage = totalPages;
+  var p = qstate.page;
+  var html = pgBtn(iconSvg('first'), '首页', 1, p === 1);
+  html += pgBtn(iconSvg('prev'), '上一页', p - 1, p === 1);
+  var start = Math.max(1, p - 3), end = Math.min(totalPages, start + 6);
+  start = Math.max(1, end - 6 > 0 ? end - 6 : 1);
+  for(var i = start; i <= end; i++){
+    html += pgBtn(String(i), '第 ' + i + ' 页', i, i === p);
+  }
+  html += pgBtn(iconSvg('next'), '下一页', p + 1, p === totalPages);
+  html += pgBtn(iconSvg('last'), '末页', totalPages, p === totalPages);
+  var pager = document.getElementById('dlPager');
+  pager.innerHTML = html;
+  pager.querySelectorAll('.pgbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var tp = parseInt(b.getAttribute('data-page'), 10);
+      if(isNaN(tp) || tp < 1 || tp > qstate.lastPage){ return; }
+      qstate.page = tp;
+      renderQRows();
+    });
+  });
+  document.getElementById('dlPageInfo').textContent = qstate.total
+    ? (qstate.total + ' 条 · ' + qstate.page + '/' + totalPages) : '';
+}
+
+document.getElementById('dlPageSize').addEventListener('change', function(){
+  qstate.size = parseInt(this.value, 10) || 10;
+  qstate.page = 1;
+  renderQRows();
+});
+
+function refreshDlQueue(){
+  api('/download/list').then(function(j){
+    qstate.items = j.items || [];
+    qstate.total = qstate.items.length;
+    if(qstate.page > Math.max(1, Math.ceil(qstate.total / qstate.size))){ qstate.page = 1; }
+    renderQRows();
+  }).catch(function(){});
+}
+
+function renderQRows(){
+  var items = qstate.items;
+  var body = document.getElementById('dlQueueBody');
+  if(!items.length){
+    body.innerHTML = '<tr><td colspan="6" class="loading">暂无下载任务</td></tr>';
+    document.getElementById('dlQueueStat').textContent = '';
+    renderQPager();
+    stopDlTimer();
+    return;
+  }
+  var start = (qstate.page - 1) * qstate.size;
+  var slice = items.slice(start, start + qstate.size);
+  body.innerHTML = '';
+  var active = 0;
+  items.forEach(function(t){
+    if(t.status === 'queued' || t.status === 'downloading'){ active++; }
+  });
+  slice.forEach(function(t){
+    var pct = t.size ? Math.min(100, Math.round(t.received * 100 / t.size)) : 0;
+    var statusCn = {queued: '队列中', downloading: '下载中', completed: '已完成',
+      failed: '失败', cancelled: '已取消', interrupted: '已中断'}[t.status] || t.status;
+    var isActive = t.status === 'queued' || t.status === 'downloading';
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="color:var(--gold)">#' + t.id + '</td>' +
+      '<td class="qname"><div class="n" title="' + esc(t.filename) + '">' + esc(t.filename) + '</div>' +
+        '<small>models/' + esc(t.folder) + '/' + (t.error ? ' · ' + esc(String(t.error).slice(0, 40)) : '') + '</small></td>' +
+      '<td><div class="pbar" style="width:100%"><span style="width:' + pct + '%"></span></div></td>' +
+      '<td class="qstat"><span class="lamp ' + t.status + '"></span>' + statusCn +
+        ' ' + pct + '%' + (t.speed ? ' · ' + fmtSize(t.speed) + '/s' : '') + '</td>' +
+      '<td style="text-align:center"><button class="tcancel2" title="取消任务"' + (isActive ? '' : ' disabled') + '>取消</button></td>' +
+      '<td style="text-align:center"><button class="tcancel2" title="删除下载记录（不删除模型文件）"' + (isActive ? ' disabled' : '') + '>删除</button></td>';
+    var btns = tr.querySelectorAll('.tcancel2');
+    btns[0].addEventListener('click', function(){
+      api('/download/cancel', null, 'POST', {task_id: t.id}).then(function(j2){
+        toast((j2 && j2.message) || '已取消');
+      }).catch(function(e){ toast(e.message, true); });
+    });
+    btns[1].addEventListener('click', function(){
+      showConfirm('删除下载记录 #' + t.id + '？仅移除记录，不会删除已下载的模型文件。', '删除记录', '删除').then(function(yes){
+        if(!yes){ return; }
+        api('/download/delete', null, 'POST', {task_id: t.id}).then(function(j2){
+          toast((j2 && j2.message) || '已删除');
+          refreshDlQueue();
+        }).catch(function(e){ toast(e.message, true); });
+      });
+    });
+    body.appendChild(tr);
+  });
+  document.getElementById('dlQueueStat').textContent = items.length + ' 个任务 · ' + active + ' 个进行中';
+  renderQPager();
+  if(active){ startDlTimer(); } else { stopDlTimer(); }
+}
+function startDlTimer(){
+  if(dlState.timer){ return; }
+  dlState.timer = setInterval(function(){
+    var dlActive = document.getElementById('view-dl').classList.contains('active');
+    var queueVisible = document.getElementById('dlQueue').style.display !== 'none';
+    if(!dlActive || !queueVisible){ stopDlTimer(); return; }
+    refreshDlQueue();
+  }, 2000);
+}
+function stopDlTimer(){
+  if(dlState.timer){ clearInterval(dlState.timer); dlState.timer = null; }
+}
+
+/* 单个抓取：已有元数据时确认后 force 覆盖（含预览图） */
+var mPageUrl = '';
+document.getElementById('mFetch').addEventListener('click', function(){
+  if(!mstate.current){ return; }
+  var m = mstate.current;
+  var doFetch = function(force){
+    var btn = document.getElementById('mFetch');
+    var path = m.rel_path;
+    btn.disabled = true; btn.textContent = '抓取中…';
+    api('/model/fetch', null, 'POST', {path: path, force: force}).then(function(j){
+      toast((j && j.message) || '完成' + ((j && j.preview) ? '（预览图已更新）' : ''));
+      ensureFolder(mstate.folder, true);
+      if(mstate.current && mstate.current.rel_path === path){
+        openMLb(mstate.current);  // 重开刷新详情
+      }
+    }).catch(function(e){
+      toast('抓取失败：' + e.message, true);
+    }).then(function(){
+      btn.disabled = false; btn.textContent = '抓取 CivitAI 信息';
+    });
+  };
+  if(m.from_civitai){
+    showConfirm('该模型已有 CivitAI 元数据（部分信息可能来自副本/衍生版本）。是否重新抓取并覆盖元数据和预览图？', '重新抓取确认', '确认', false).then(function(yes){
+      if(yes){ doFetch(true); }
+    });
+  } else {
+    doFetch(false);
+  }
+});
+
+document.getElementById('modelsFetchAll').addEventListener('click', function(){
+  api('/model/fetch-all', null, 'POST', {folder: mstate.folder}).then(function(j){
+    toast((j && j.message) || '已开始');
+    if(j && j.started){
+      startFetchPolling();
+    }
+  }).catch(function(e){ toast('启动失败：' + e.message, true); });
+});
+
+function startFetchPolling(){
+  if(fetchTimer){ return; }
+  var statEl = document.getElementById('modelsStat');
+  fetchTimer = setInterval(function(){
+    api('/model/fetch-progress').then(function(p){
+      if(p && p.running){
+        statEl.textContent = '批量抓取 ' + p.done + '/' + p.total +
+          '（更新 ' + (p.updated || 0) + '，未收录 ' + (p.not_found || 0) + '，失败 ' + (p.failed || 0) + '）' +
+          (p.current ? ' ← ' + p.current : '');
+      } else {
+        clearInterval(fetchTimer); fetchTimer = null;
+        statEl.textContent = '批量抓取完成：更新 ' + (p.updated || 0) + '，未收录 ' + (p.not_found || 0) +
+          '，失败 ' + (p.failed || 0) + (p.last_error ? '（最后错误: ' + p.last_error.slice(0, 50) + '）' : '');
+        toast('批量抓取完成');
+        loadModels(true);
+      }
+    }).catch(function(){});
+  }, 1500);
+}
+document.querySelector('#modelLb .close').addEventListener('click', closeMLb);
+document.getElementById('modelLb').addEventListener('click', function(e){
+  if(e.target === this){ closeMLb(); }
+});
+document.getElementById('mDel').addEventListener('click', function(){
+  if(mstate.current){ confirmDeleteModel(mstate.current); closeMLb(); }
+});
+
+/* ── 插件配置 ── */
+function loadConfig(){
+  api('/config').then(function(j){
+    cfgGroups = (j && j.groups) || [];
+    renderConfig();
+  }).catch(function(e){ toast('配置载入失败：' + e.message, true); });
+}
+function renderConfig(){
+  var g = cfgGroups.filter(function(x){ return x.id === cfgSub; })[0];
+  if(!g){ return; }
+  document.getElementById('cfgTitle').textContent = g.title;
+  var form = document.getElementById('cfgForm');
+  form.innerHTML = '';
+  g.fields.forEach(function(f){
+    var div = document.createElement('div');
+    div.className = 'field';
+    var label = document.createElement('label');
+    label.textContent = f.label;
+    var ctrl = document.createElement('div');
+    ctrl.className = 'ctrl';
+    if(f.kind === 'bool'){
+      ctrl.innerHTML = '<label class="switch"><input type="checkbox" data-key="' + f.key + '"' +
+        (f.value ? ' checked' : '') + '><span class="slider"></span></label>';
+    } else if(f.kind === 'select'){
+      var sel = '<select data-key="' + f.key + '">';
+      (f.options || []).forEach(function(o){
+        sel += '<option value="' + esc(o) + '"' + (o === f.value ? ' selected' : '') + '>' + esc(o) + '</option>';
+      });
+      sel += '</select>';
+      ctrl.innerHTML = sel;
+    } else {
+      var type = f.kind === 'int' ? 'number' : 'text';
+      ctrl.innerHTML = '<input type="' + type + '" data-key="' + f.key + '" value="' + esc(f.value) + '"' +
+        (f.kind === 'secret' ? ' placeholder="留空或保持掩码则不修改"' : '') + '>';
+    }
+    div.appendChild(label);
+    div.appendChild(ctrl);
+    form.appendChild(div);
+  });
+}
+document.querySelectorAll('#configNav button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('#configNav button').forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    cfgSub = b.getAttribute('data-cfg');
+    if(!cfgGroups){ loadConfig(); } else { renderConfig(); }
+  });
+});
+document.getElementById('cfgSave').addEventListener('click', function(){
+  var updates = {};
+  document.querySelectorAll('#cfgForm [data-key]').forEach(function(el){
+    var key = el.getAttribute('data-key');
+    if(el.type === 'checkbox'){ updates[key] = el.checked; }
+    else if(el.type === 'number'){ updates[key] = parseInt(el.value, 10); }
+    else { updates[key] = el.value; }
+  });
+  api('/config/save', null, 'POST', {updates: updates}).then(function(j){
+    toast((j && j.message) || '配置已保存');
+    loadConfig();
+  }).catch(function(e){ toast('保存失败：' + e.message, true); });
+});
+document.getElementById('cfgReload').addEventListener('click', function(){ loadConfig(); });
+
+/* ── 状态筛选/全局事件 ── */
+document.querySelectorAll('#statusNav button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('#statusNav button').forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    state.statFilter = b.getAttribute('data-status') || '';
+    state.page = 1;
+    load();
+  });
+});
+document.querySelector('#lightbox .close').addEventListener('click', closeLb);
+document.getElementById('lightbox').addEventListener('click', function(e){
+  if(e.target === this){ closeLb(); }
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    closeLb();
+    document.getElementById('confirmBox').classList.remove('open');
+    if(confirmResolve){ confirmResolve(false); confirmResolve = null; }
+  }
+});
+document.getElementById('copyUrl').addEventListener('click', function(){
+  if(current && current.image_url){ copyText(current.image_url, '图床URL已复制'); }
+  else { toast('该任务没有图床URL', true); }
+});
+document.getElementById('resend').addEventListener('click', function(){
+  if(!current){ return; }
+  api('/resend', null, 'POST', {task_id: current.id}).then(function(j){
+    toast((j && j.message) || '已重新推送到原会话');
+  }).catch(function(e){ toast('失败：' + e.message, true); });
+});
+document.getElementById('pageSize').addEventListener('change', function(){
+  state.size = parseInt(this.value, 10) || 10;
+  state.page = 1;
+  load();
+});
+
+initBridge(function(){
+  load();
+  setInterval(function(){
+    var archiveActive = document.getElementById('view-archive').classList.contains('active');
+    if(!archiveActive){ return; }
+    var hasActive = Object.keys(tasks).some(function(k){ return tasks[k].status === 'pending' || tasks[k].status === 'running'; });
+    if(hasActive && document.visibilityState !== 'hidden' && !document.getElementById('lightbox').classList.contains('open')){
+      load();
+    }
+  }, 5000);
+});
+})();
+</script>
+</body>
+</html>

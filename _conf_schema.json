@@ -1,0 +1,96 @@
+{
+    "mcp_url": {
+        "description": "【ComfyUI】MCP 服务地址",
+        "type": "string",
+        "hint": "ComfyUI-APP-MCP 的 streamable_http 端点，默认走 ComfyUI 主服务代理路径。",
+        "default": "http://127.0.0.1:8188/app-mcp"
+    },
+    "comfyui_base_url": {
+        "description": "【ComfyUI】ComfyUI 基础地址",
+        "type": "string",
+        "hint": "用于拼接 /view 图片下载等直连接口。",
+        "default": "http://127.0.0.1:8188"
+    },
+    "comfyui_models_root": {
+        "description": "【ComfyUI】模型库根目录",
+        "type": "string",
+        "hint": "checkpoints / diffusion_models / loras 三个模型文件夹的父目录。",
+        "default": ""
+    },
+    "poll_interval": {
+        "description": "【任务】后台轮询间隔（秒）",
+        "type": "int",
+        "hint": "后台 worker 轮询 ComfyUI 任务结果的间隔。",
+        "default": 3
+    },
+    "task_timeout": {
+        "description": "【任务】单任务超时（秒）",
+        "type": "int",
+        "hint": "超过此时长仍未完成则任务标记失败。",
+        "default": 900
+    },
+    "civitai_api_key": {
+        "description": "【CivitAI】API Key",
+        "type": "text",
+        "hint": "请求头 Authorization: Bearer <key> 认证，在 civitai.com 个人设置中生成。",
+        "default": ""
+    },
+    "civitai_base_url": {
+        "description": "【CivitAI】站点",
+        "type": "string",
+        "options": [
+            "https://civitai.red/api/v1/",
+            "https://civitai.com/api/v1/"
+        ],
+        "hint": "红站 civitai.red 为官方 NSFW 站（内容全量，API 查询/哈希匹配默认走此站）；蓝站 civitai.com 仅含 SFW 内容（搜索时可选）。",
+        "default": "https://civitai.red/api/v1/"
+    },
+    "civitai_proxy": {
+        "description": "【CivitAI】HTTP 代理（可选）",
+        "type": "string",
+        "hint": "如 http://127.0.0.1:7890，留空则直连。图片 CDN（image.civitai.com）通常需要代理。",
+        "default": ""
+    },
+    "r2_enabled": {
+        "description": "【R2 图床】启用上传",
+        "type": "bool",
+        "hint": "生成完成后由插件上传 Cloudflare R2；失败自动降级为仅保留本地文件。",
+        "default": false
+    },
+    "r2_account_id": {
+        "description": "【R2 图床】Account ID",
+        "type": "string",
+        "default": ""
+    },
+    "r2_access_key_id": {
+        "description": "【R2 图床】Access Key ID",
+        "type": "string",
+        "default": ""
+    },
+    "r2_secret_access_key": {
+        "description": "【R2 图床】Secret Access Key",
+        "type": "text",
+        "hint": "敏感凭证，请勿外泄。",
+        "default": ""
+    },
+    "r2_bucket": {
+        "description": "【R2 图床】Bucket",
+        "type": "string",
+        "default": ""
+    },
+    "r2_public_base_url": {
+        "description": "【R2 图床】公网基础 URL",
+        "type": "string",
+        "default": ""
+    },
+    "r2_key_prefix": {
+        "description": "【R2 图床】对象 Key 前缀",
+        "type": "string",
+        "default": "comfyui/"
+    },
+    "r2_timeout_seconds": {
+        "description": "【R2 图床】上传超时（秒）",
+        "type": "int",
+        "default": 60
+    }
+}

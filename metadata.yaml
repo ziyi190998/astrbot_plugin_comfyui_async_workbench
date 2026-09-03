@@ -1,0 +1,10 @@
+name: astrbot_plugin_comfyui_async_workbench
+display_name: ComfyUI MCP工作台
+desc: 对接本地 ComfyUI-APP-MCP：LLM 异步画图任务、R2 图床上传、图片管理工作台、本地模型管理与 CivitAI 下载。
+version: v0.2.0
+author: 千代鳶
+repo: https://github.com/ziyi190998/astrbot_plugin_comfyui_async_workbench
+astrbot_version: ">=4.25.3,<5"
+pages:
+  - name: workbench
+    title: ComfyUI工作台
